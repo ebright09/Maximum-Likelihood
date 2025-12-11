@@ -337,7 +337,7 @@ IMPORTANT RULES FOR GENERATION:
     }
   `;try{const u=await aS().models.generateContent({model:"gemini-2.5-flash",contents:s,config:{responseMimeType:"application/json"}}),f=JSON.parse(u.text||"{}");let p=gn.TEXT_INPUT;return f.type==="MULTIPLE_CHOICE"&&(p=gn.MULTIPLE_CHOICE),f.type==="CALCULATION"&&(p=gn.CALCULATION),{context:f.context,text:f.text,type:p,options:f.options,correctValue:f.correctValue,rubric:f.rubric}}catch(a){console.error("AI Error generating question:",a);const u=a.message==="API_KEY_MISSING"||a.toString().includes("API Key");return{context:u?"System Configuration Error":"We seem to have lost connection to the server farm.",text:u?`The API Key is missing from the deployment. 
 
-Please ensure your .env file contains API_KEY=... and rebuild.`:"I couldn't generate a question right now. My standard errors are infinite.",type:gn.TEXT_INPUT,rubric:"Fix the configuration."}}},EU=async(t,e)=>{if(t.type===gn.CALCULATION){const s=Number(e),a=Math.abs(s-(t.correctValue||0))<.05,u=a?"Boom. Spot on. The numbers don't lie.":`Not quite. I calculated ${t.correctValue}. Check your standard errors.`;return{isCorrect:a,feedback:u}}const o=`
+Please ensure your .env file contains GEMINI_API_KEY=... and you have redeployed.`:"I couldn't generate a question right now. My standard errors are infinite.",type:gn.TEXT_INPUT,rubric:"Fix the configuration."}}},EU=async(t,e)=>{if(t.type===gn.CALCULATION){const s=Number(e),a=Math.abs(s-(t.correctValue||0))<.05,u=a?"Boom. Spot on. The numbers don't lie.":`Not quite. I calculated ${t.correctValue}. Check your standard errors.`;return{isCorrect:a,feedback:u}}const o=`
     ${lS}
     Question Context: ${t.context}
     Question: ${t.text}
