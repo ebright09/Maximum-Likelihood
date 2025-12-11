@@ -1,7 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 import { CaseStudy, GeneratedQuestion, QuestionType, Difficulty, EvaluationResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to get the AI instance safely
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("CRITICAL ERROR: Google Gemini API Key is missing! Check your .env file or build configuration.");
+    throw new Error("API Key missing");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const SYSTEM_PROMPT = `
 You are Professor Max Auffhammer, a witty, dry-humored, "coastal elite" economist at Berkeley Haas. 
@@ -48,6 +56,9 @@ export const generateQuestionForTopic = async (
   `;
 
   try {
+    // Initialize AI here instead of top-level to prevent app crash on load
+    const ai = getAI();
+    
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -73,9 +84,9 @@ export const generateQuestionForTopic = async (
     };
   } catch (error) {
     console.error("AI Error", error);
-    // Fallback question
+    // Fallback question ensures the game is playable even if API fails
     return {
-      context: "We seem to have lost connection to the server farm.",
+      context: "We seem to have lost connection to the server farm (API Error).",
       text: "What is the standard error definition?",
       type: QuestionType.TEXT_INPUT,
       rubric: "standard deviation divided by root n"
@@ -92,37 +103,43 @@ export const evaluateStudentAnswer = async (
   if (question.type === QuestionType.CALCULATION) {
     const numAns = Number(studentAnswer);
     const isCorrect = Math.abs(numAns - (question.correctValue || 0)) < 0.05; // Tolerance
-    const feedback = isCorrect 
-      ? "Boom. Spot on. The numbers don't lie." 
+    const feedback = isCorrect
+      ? "Boom. Spot on. The numbers don't lie."
       : `Not quite. I calculated ${question.correctValue}. Check your standard errors.`;
     return { isCorrect, feedback };
   }
 
-  // Text/Concept check via AI
-  const prompt = `
-    ${SYSTEM_PROMPT}
-    Question Context: ${question.context}
-    Question: ${question.text}
-    Rubric/Correct Answer: ${question.rubric || JSON.stringify(question.options)}
-    Student Answer: ${studentAnswer}
+  try {
+    const ai = getAI();
+    // Text/Concept check via AI
+    const prompt = `
+      ${SYSTEM_PROMPT}
+      Question Context: ${question.context}
+      Question: ${question.text}
+      Rubric/Correct Answer: ${question.rubric || JSON.stringify(question.options)}
+      Student Answer: ${studentAnswer}
 
-    Evaluate the student's answer. 
-    Be strict on concepts (Data & Decisions logic) but lenient on phrasing.
-    Respond in Max's voice. 
-    If wrong, explain why briefly (one sentence).
-    
-    Output JSON:
-    {
-      "isCorrect": boolean,
-      "feedback": "string"
-    }
-  `;
+      Evaluate the student's answer. 
+      Be strict on concepts (Data & Decisions logic) but lenient on phrasing.
+      Respond in Max's voice. 
+      If wrong, explain why briefly (one sentence).
+      
+      Output JSON:
+      {
+        "isCorrect": boolean,
+        "feedback": "string"
+      }
+    `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: { responseMimeType: 'application/json' }
-  });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
 
-  return JSON.parse(response.text || '{"isCorrect": false, "feedback": "Error parsing response"}');
+    return JSON.parse(response.text || '{"isCorrect": false, "feedback": "Error parsing response"}');
+  } catch (error) {
+    console.error("AI Evaluation Error", error);
+    return { isCorrect: false, feedback: "I couldn't verify that right now. (API Error)" };
+  }
 };
