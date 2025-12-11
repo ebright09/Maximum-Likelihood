@@ -1,13 +1,19 @@
-import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
-    return { base: '/Maximum-Likelihood/',
-        server: {port: 3000, host: '0.0.0.0' },
-        plugins: [react()], define: { 'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY) },
-        resolve: { alias: { '@': path.resolve(__dirname, '.') }
-        }
-    };
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
+    plugins: [react()],
+    // IMPORTANT: This must match your repository name for GitHub Pages to find assets
+    base: '/Maximum-Likelihood/',
+    define: {
+      // safe exposure of API key for the "tutoring" context logic
+      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+    }
+  };
 });
