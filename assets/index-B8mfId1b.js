@@ -312,7 +312,7 @@ IMPORTANT RULES FOR GENERATION:
 1. Do NOT start questions with "Alright wizards" or "Listen up". Start directly with the relevant context or question.
 2. Do NOT use the catchphrases "Boom. Deep Idea." or "Check your standard errors" inside the *question text*. Save those for feedback.
 3. Be concise. Avoid walls of text.
-`,aS=()=>{try{throw console.error("API_KEY is missing. Application cannot contact Gemini."),new Error("API_KEY_MISSING")}catch(t){throw console.error("Failed to initialize GoogleGenAI client:",t),t}},SU=async(t,e,o)=>{const s=`
+`,aS=()=>{try{const t="AIzaSyCR1oDfWeCzBHgIYB9uZNTDPIatM9meiHw";return new TU({apiKey:t})}catch(t){throw console.error("Failed to initialize GoogleGenAI client:",t),t}},SU=async(t,e,o)=>{const s=`
     ${lS}
     Generate a single ${e} level question about ${t} using the following case study context:
     Case: ${o.title}
